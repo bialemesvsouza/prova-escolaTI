@@ -17,5 +17,3 @@ EXPOSE 8080
 
 CMD ["python", "-m", "src.main"]
 
-
-FROM scratch
