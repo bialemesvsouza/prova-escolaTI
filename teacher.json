@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "repo": "prova-escolaTI",
+  "repo_url": "https://github.com/bialemesvsouza/prova-escolaTI",
+  "exam_dir": "exams/2026/track-03-crud",
+  "track": "track-03-crud",
+  "issue": 1,
+  "issue_url": "https://github.com/bialemesvsouza/prova-escolaTI/issues/1",
+  "gerado_em": "2026-10-08T01:23:16+00:00",
+  "fechada_em": "2026-10-08T01:22:48Z",
+  "aplicada": true,
+  "motivo": null,
+  "aluno": {
+    "login": "bialemesvsouza",
+    "ra": "231134292",
+    "nome": "Beatriz Lemes Vasconcelos de Souza"
+  },
+  "variante": {
+    "slug": "prova-escolaTI",
+    "EXAM_DIR": "exams/2026/track-03-crud",
+    "PREFIXO": "B",
+    "RAZAO_PREFERENCIAL": 3,
+    "PORTA_API": 9204
+  },
+  "janela": {
+    "minutos": 120,
+    "t0": "2026-10-08T00:17:41Z",
+    "ultimo_push": "2026-10-07T22:11:04-03:00"
+  },
+  "commits": {
+    "total": 7,
+    "autores": [
+      "Beatriz Lemes"
+    ],
+    "primeiro": "2026-10-07T21:10:51-03:00",
+    "ultimo": "2026-10-07T22:11:04-03:00",
+    "fora_da_janela": 0
+  },
+  "nota_parcial": {
+    "valor": null,
+    "criterios": {}
+  },
+  "auto_correcao": {
+    "executada": true,
+    "nota_ultima": 40
+  },
+  "fontes": {
+    "presente": true,
+    "declarou_vazio": true,
+    "links": 1
+  }
+}
