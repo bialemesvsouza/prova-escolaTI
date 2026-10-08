@@ -14,13 +14,7 @@
 > texto corrido — inclusive o exemplo logo abaixo — **não são contados**
 > como fonte declarada.
 
-| # | URL | O que foi consultado | Onde aparece no entregável |
-| --- | --- | --- | --- |
-| — | | | |
-
-*(Ex.: `https://docs.oracle.com/...` → sintaxe de `Optional` → `plan.md` na
-seção de decisões. Esse link é ILUSTRATIVO — fora de linha numerada não
-conta. Se nenhum site foi consultado, escreva: **"Nenhum site consultado."**)*
+Nenhum site consultado.
 
 ## 2. Uso de IA — **somente como consulta**
 
@@ -38,9 +32,7 @@ conta. Se nenhum site foi consultado, escreva: **"Nenhum site consultado."**)*
 
 | # | Link público da conversa | Onde o conteúdo foi usado |
 | --- | --- | --- |
-| — | | |
-
-*(Se nenhuma IA foi utilizada, escreva: **"Nenhuma IA utilizada."**)*
+| 1 | **https://share.gemini.google/QRCU6FjZXaWN** | Criação do `Containerfile`, estrutura base do servidor REST em Python (FastAPI + SQLite), lógica de persistência e regra de negócio da fila no `src/main.py`. Ajuda com comandos do Git Bash. |
 
 ## 3. Compromisso
 
@@ -48,11 +40,11 @@ Declaro que todo o conteúdo deste repositório que não é de minha autoria dir
 está declarado acima, e que consigo explicar qualquer trecho entregue — tenha
 ele vindo da minha cabeça, de um site ou de uma IA consultada.
 
-**Nome / RA:**
+**Nome / RA:** Beatriz Lemes Vasconcelos de Souza / **231134292**
 
 [^transparencia]: Este arquivo é, ele mesmo, um exemplo de markdown bem
-    usado: *alert* para a regra crítica, tabelas para os registros e *footnote*
-    para justificativas. O mesmo padrão vale para os `.md` que você entregar.
+   usado: *alert* para a regra crítica, tabelas para os registros e *footnote*
+   para justificativas. O mesmo padrão vale para os `.md` que você entregar.
 [^plagio]: Rubrica comum da disciplina: conteúdo de LLM não declarado
-    configura plágio e zera a prova — o link público da conversa é o que
-    transforma "copiou" em "consultou".
+   configura plágio e zera a prova — o link público da conversa é o que
+   transforma "copiou" em "consultou".
