@@ -1,0 +1,29 @@
+name: Validar exams/ (só no template)
+
+# Roda APENAS no repositorio-template (guard por nome exato): a cada push na
+# main, valida as pastas de prova publicadas (schemas, colisões com o
+# esqueleto, mais de uma track por ano). Evita publicar pasta errada/quebrada
+# no dia da prova — "aplicar pasta de ano errado zera a prova" começa aqui.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  # validaçao mais recente vence — push-spam coalesce no template
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    if: github.repository == 'endersonmenezes/exam-escola-ti'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python scripts/validar_exams.py

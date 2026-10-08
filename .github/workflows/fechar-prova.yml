@@ -1,0 +1,44 @@
+name: Fechar prova (teacher.json)
+
+# O ALUNO encerra a prova fechando a issue unica "🎯 Prova". Este workflow so
+# age se a issue fechada for a do lock (.prova/issue); issue de organizacao do
+# aluno -> no-op (scripts/fechar_prova.py). Gera teacher.json (schema 1) na
+# raiz (commit do bot), comenta a confirmacao na propria issue e ainda escreve
+# o JSON no Step Summary. Fechar sem aplicar tambem gera o arquivo
+# ("aplicada": false + motivo).
+
+on:
+  issues:
+    types: [closed]
+
+concurrency:
+  # fechamento gera o teacher.json — deve completar; eventos em fila
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  REPO_SLUG: ${{ github.event.repository.name }}
+  REPO_FULL: ${{ github.repository }}
+  REPO_OWNER: ${{ github.repository_owner }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ISSUE_NUMBER: ${{ github.event.issue.number }}
+  ISSUE_CLOSED_AT: ${{ github.event.issue.closed_at }}
+
+jobs:
+  fechar:
+    name: Gerar teacher.json e encerrar a prova
+    if: github.repository != 'endersonmenezes/exam-escola-ti'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: fechar prova (teacher.json)
+        run: python scripts/fechar_prova.py

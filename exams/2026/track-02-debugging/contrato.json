@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "titulo": "Prova 01 · Track 02 — Cadastro de Produtos (debugging fullstack)",
+    "versao": "2026",
+    "track": "track-02-debugging",
+    "aviso": "App Spring Boot + Maven (backend), React (frontend) e PostgreSQL, orquestrada por Docker Compose — quebrada DE PROPOSITO em 3 camadas (compilacao, configuracao, startup/logica). O objeto da prova e o METODO de debug. O enunciado em prosa esta no ENUNCIADO.md; este arquivo e a versao maquina-legivel do contrato de 'saudavel'."
+  },
+  "variante": {
+    "descricao": "A variante de cada aluno deriva do NOME DO REPOSITORIO aplicado a estas tabelas (hash sha256). A correcao recomputa os mesmos valores — copiar .env/compose/application.properties de colega faz a app subir com os alvos ERRADOS e falhar no smoke.",
+    "extras": {
+      "PORTA_PUBLICADA": { "base": 9101, "passo": 1, "faixa": 5 },
+      "BANCO": { "base": 0, "passo": 1, "faixa": 97, "formato": "prova_%02d" },
+      "ORIGEM_FRONTEND": { "opcoes": ["http://localhost:3000"] }
+    },
+    "uso": {
+      "PORTA_PUBLICADA": "Porta no host em que o backend deve ficar acessivel (9101..9105)",
+      "BANCO": "Nome do banco PostgreSQL — compose e backend devem concordar (prova_00..prova_96)",
+      "ORIGEM_FRONTEND": "Origem permitida no CORS do backend (fixa: http://localhost:3000)"
+    }
+  },
+  "contrato_saudavel": [
+    "docker compose up --build sobe db, backend e frontend sem sair",
+    "GET http://localhost:{PORTA_PUBLICADA}/produtos → 200 JSON array (inicialmente vazio) COM header Access-Control-Allow-Origin compativel com ORIGEM_FRONTEND",
+    "POST http://localhost:{PORTA_PUBLICADA}/produtos com {\"nome\": \"Teclado\", \"precoCentavos\": 15000, \"quantidade\": 7} → 201",
+    "GET seguinte lista o produto criado",
+    "http://localhost:3000 (frontend) abre e lista os produtos do backend"
+  ],
+  "camadas_com_erros": {
+    "observacao": "A quantidade de erros por camada NAO e revelada.",
+    "compilacao": "docker compose build falha",
+    "configuracao": "build ok, mas variaveis/portas/banco impedem a subida",
+    "startup_logica": "sobe e cai, ou sobe com comportamento errado (diagnostico via docker compose logs)"
+  },
+  "restricoes": [
+    "Corrigir != reescrever: trocar a stack, remover funcionalidade ou 'consertar' apagando endpoints vale ZERO no criterio A (regressao)",
+    "O Dockerfile de cada servico deve continuar funcionando — a correcao reconstroi tudo do zero",
+    "Metodo conta: commits pequenos no padrao 'fix: <hipotese> → <correcao>' (ou relatorio equivalente no README.md do backend) pontuam no criterio E"
+  ],
+  "exemplo_inconsistente": {
+    "aviso": "TRAMPA T7 — o 'exemplo de fluxo saudavel' abaixo (anotado por um monitor da turma anterior) CONTRADIZ o contrato de proposito. Confie no contrato, nao no exemplo.",
+    "conteudo": "POST /produto retornando {\"ok\": true}",
+    "por_que_esta_errado": "O endpoint e /produtos (plural), o body e o JSON do produto com precoCentavos/quantidade, e o status de criacao e 201 — nao um {\"ok\": true} generico."
+  }
+}

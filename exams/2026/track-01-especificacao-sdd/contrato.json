@@ -1,0 +1,266 @@
+{
+  "meta": {
+    "titulo": "Prova 01 · Track 01 — Zona Azul Digital (especificação SDD)",
+    "versao": "2026",
+    "track": "track-01-especificacao-sdd",
+    "correcao": {
+      "modelo": "kimi-2.8-preview-2026",
+      "harness": false,
+      "contexto_tokens": 256000,
+      "observacao": "O codigo e gerado pelo Kimi 2.8 (Preview 2026) SEM harness — apenas o agente, em janela de 256k tokens, executando a tarefa proposta pelos .md do aluno. Mesmo modelo e configuracao para todos; a unica variavel e a qualidade da especificacao."
+    },
+    "aviso": "O entregavel do aluno sao ESPECIFICACOES em .md; na correcao, um modelo de IA fixo (ver meta.correcao) gera o codigo a partir delas e a suite valida ESTE contrato exatamente (status codes, nomes de campos, regras de arredondamento). O enunciado em prosa esta no ENUNCIADO.md; este arquivo e a versao maquina-legivel do mesmo contrato."
+  },
+  "variante": {
+    "descricao": "A variante de cada aluno deriva do NOME DO REPOSITORIO aplicado a estas tabelas (hash sha256: opcoes = escolha por modulo; base/passo/faixa = base + (h % faixa) * passo). A correcao recomputa os mesmos valores — copiar params.json de colega nao funciona.",
+    "extras": {
+      "TARIFA_HORA_CENTAVOS": {
+        "base": 400,
+        "passo": 50,
+        "faixa": 5
+      },
+      "FRACAO_MINUTOS": {
+        "opcoes": [
+          30,
+          15
+        ]
+      },
+      "TETO_DIARIO_CENTAVOS": {
+        "base": 5000,
+        "passo": 1000,
+        "faixa": 4
+      },
+      "PORTA_SERVICO": {
+        "base": 8001,
+        "passo": 1,
+        "faixa": 5
+      },
+      "TOLERANCIA_MINUTOS": {
+        "opcoes": [
+          0,
+          10,
+          15
+        ]
+      }
+    },
+    "uso": {
+      "TARIFA_HORA_CENTAVOS": "Valor da hora cheia, em centavos (400..600)",
+      "FRACAO_MINUTOS": "Granularidade minima de cobranca (30 ou 15 min; sempre arredondando para cima)",
+      "TETO_DIARIO_CENTAVOS": "Valor maximo cobrado por bilhete (5000..8000)",
+      "PORTA_SERVICO": "Porta em que o servico gerado deve escutar na correcao (8001..8005)",
+      "TOLERANCIA_MINUTOS": "Minutos iniciais GRATIS por bilhete (0, 10 ou 15); passou da tolerancia, cobra desde o primeiro minuto"
+    }
+  },
+  "servidor": {
+    "porta_interna": 8080,
+    "fuso": "-03:00",
+    "base_url_suite": "http://localhost:{PORTA_SERVICO}",
+    "sem_env_obrigatoria": true,
+    "observacao": "O codigo GERADO (na correcao) deve subir em container e escutar na PORTA_SERVICO da variante. Data/hora em ISO-8601 com fuso -03:00."
+  },
+  "endpoints": [
+    {
+      "id": "abrir_bilhete",
+      "uc": "UC1",
+      "metodo": "POST",
+      "path": "/bilhetes",
+      "requisicao": {
+        "body": {
+          "placa": "obrigatória — 7 caracteres alfanuméricos, maiúsculos (ex.: ABC1D23)",
+          "entrada": "opcional — ISO-8601 com fuso (ex.: 2026-10-12T08:30:00-03:00); default = agora. Gancho de testabilidade: a suite de correcao usa para cobrar regras de valor sem esperar tempo real. Ausencia = relogio; formato invalido = 422 entrada_invalida"
+        }
+      },
+      "respostas": {
+        "201": {
+          "corpo": {
+            "id": 1,
+            "placa": "ABC1D23",
+            "entrada": "<ISO-8601 com fuso -03:00>",
+            "status": "aberto"
+          }
+        },
+        "422": {
+          "corpo": {
+            "erro": "placa_invalida | entrada_invalida"
+          },
+          "quando": "placa ausente ou fora do formato; entrada presente mas fora de ISO-8601"
+        }
+      }
+    },
+    {
+      "id": "encerrar_bilhete",
+      "uc": "UC2",
+      "metodo": "POST",
+      "path": "/bilhetes/{id}/encerramento",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "id": 1,
+            "placa": "ABC1D23",
+            "entrada": "<ISO-8601>",
+            "saida": "<ISO-8601>",
+            "minutos": 95,
+            "valor_centavos": 1250
+          }
+        },
+        "404": {
+          "corpo": {
+            "erro": "bilhete_nao_encontrado"
+          },
+          "quando": "bilhete inexistente"
+        },
+        "409": {
+          "corpo": {
+            "erro": "bilhete_ja_encerrado"
+          },
+          "quando": "bilhete ja encerrado"
+        }
+      },
+      "regras_valor": [
+        "Cobra-se por fracao de FRACAO_MINUTOS minutos, arredondando para cima (fracao exata cobra 1 fracao; 1 minuto a mais cobra a fracao seguinte)",
+        "hora cheia = TARIFA_HORA_CENTAVOS; valor da fracao = tarifa / (60 / FRACAO_MINUTOS)",
+        "teto diario: valor_centavos nunca supera TETO_DIARIO_CENTAVOS",
+        "valor sempre em centavos, inteiro — a API nunca retorna ponto flutuante (0.1 + 0.2 != 0.3; centavos inteiros eliminam a classe de bug)"
+      ]
+    },
+    {
+      "id": "listar_ativos",
+      "uc": "UC3",
+      "metodo": "GET",
+      "path": "/bilhetes/ativos",
+      "respostas": {
+        "200": {
+          "corpo": [
+            "array dos bilhetes abertos, mais recentes primeiro"
+          ]
+        }
+      }
+    },
+    {
+      "id": "relatorio_diario",
+      "uc": "UC4",
+      "metodo": "GET",
+      "path": "/relatorios/diario",
+      "requisicao": {
+        "query": {
+          "data": "obrigatória — formato AAAA-MM-DD"
+        }
+      },
+      "respostas": {
+        "200": {
+          "corpo": {
+            "data": "2026-10-05",
+            "total_bilhetes": 12,
+            "faturamento_centavos": 8400,
+            "tempo_medio_minutos": 47
+          },
+          "regra": "tempo_medio_minutos considera apenas bilhetes encerrados no dia, arredondando 0,5 para cima"
+        },
+        "422": {
+          "corpo": {
+            "erro": "data_invalida"
+          },
+          "quando": "data fora do formato AAAA-MM-DD"
+        }
+      }
+    },
+    {
+      "id": "cancelar_bilhete",
+      "uc": "UC5",
+      "metodo": "POST",
+      "path": "/bilhetes/{id}/cancelamento",
+      "descricao": "Cancela um bilhete ABERTO (desistencia antes de encerrar) — sem cobranca.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "status": "cancelado",
+            "observacao": "mesmo formato do bilhete; sem saida nem valor_centavos"
+          }
+        },
+        "404": {
+          "corpo": {
+            "erro": "bilhete_nao_encontrado"
+          },
+          "quando": "bilhete inexistente"
+        },
+        "409": {
+          "corpo": {
+            "erro": "bilhete_nao_aberto"
+          },
+          "quando": "bilhete ja encerrado ou cancelado"
+        }
+      }
+    },
+    {
+      "id": "historico_placa",
+      "uc": "UC6",
+      "metodo": "GET",
+      "path": "/bilhetes",
+      "requisicao": {
+        "query": {
+          "placa": "obrigatória — filtra o historico da placa"
+        }
+      },
+      "descricao": "Historico completo de uma placa (qualquer status), mais recentes primeiro.",
+      "respostas": {
+        "200": {
+          "corpo": [
+            "array de bilhetes da placa (qualquer status), mais recentes primeiro — vazio se nunca estacionou"
+          ]
+        },
+        "422": {
+          "corpo": {
+            "erro": "placa_invalida"
+          },
+          "quando": "placa ausente ou fora do formato"
+        }
+      }
+    },
+    {
+      "id": "tolerancia",
+      "uc": "UC7",
+      "regra_de_valor": true,
+      "descricao": "TOLERANCIA_MINUTOS iniciais gratis por bilhete: duracao <= tolerancia -> valor_centavos = 0. Passou da tolerancia (mesmo por 1 minuto) -> cobra INTEGRAL desde o primeiro minuto (a tolerancia NAO e descontada).",
+      "exemplos": [
+        "TOLERANCIA=10, 10 min -> 0 centavos",
+        "TOLERANCIA=10, 11 min -> cobra as fracoes desde o minuto zero",
+        "TOLERANCIA=0 -> toda duracao cobrada (comportamento atual)"
+      ]
+    },
+    {
+      "id": "placa_duplicada",
+      "uc": "UC8",
+      "regra_de_negocio": true,
+      "descricao": "Uma placa so pode ter UM bilhete aberto por vez.",
+      "respostas": {
+        "409": {
+          "corpo": {
+            "erro": "bilhete_em_aberto"
+          },
+          "quando": "POST /bilhetes para placa que ja tem bilhete aberto"
+        }
+      },
+      "observacao": "Apos encerrar ou cancelar, a placa pode abrir novamente."
+    }
+  ],
+  "exemplo_inconsistente": {
+    "aviso": "TRAMPA T7 — o 'exemplo de um relatorio antigo' abaixo CONTRADIZ o contrato de proposito. Confie no contrato, nao no exemplo.",
+    "conteudo": "POST /bilhetes/7/encerramento → {\"id\": 7, \"valor\": 12.50}",
+    "por_que_esta_errado": "O contrato exige valor_centavos inteiro (ex.: 1250), nunca ponto flutuante ('valor': 12.50), alem dos campos placa/entrada/saida/minutos."
+  },
+  "entregavel": {
+    "descricao": "Especificacoes em .md (NUNCA codigo): constitution.md, spec.md, plan.md, tests.md, tasks.md — nomes e quantidade livres, pontuam os 5 melhores",
+    "criterio_E_checklist": {
+      "constitution.md": ">= 1 regra operacional concreta",
+      "spec.md": ">= 1 criterio de aceite mensuravel por UC",
+      "plan.md": ">= 1 decisao tecnica com justificativa",
+      "tests.md": ">= 1 caso de borda por regra de negocio",
+      "tasks.md": ">= 3 tarefas decompostas",
+      "outro .md": "headers + especificacao concreta que instrua geracao de codigo"
+    },
+    "regra_fatal": "Snippets de codigo de ate 20 linhas sao aceitos nos .md para elucidar o agente; bloco maior que 20 linhas = implementacao colada = prova ZERADA (verificado automaticamente no CI, job md)"
+  },
+  "regras_gerais": [
+    "Precedencia de erros: validacao de formato (422) vem ANTES de regras de negocio (409) — payload malformado nunca dispara conflito de estado"
+  ]
+}

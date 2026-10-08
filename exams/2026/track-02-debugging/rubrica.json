@@ -1,0 +1,14 @@
+{
+  "nota_max": 100,
+  "extras_max": 0,
+  "janela_minutos": 120,
+  "criterios": {
+    "A_app_funcional": 30,
+    "B_compilacao": 25,
+    "C_configuracao": 20,
+    "D_startup_logica": 15,
+    "E_metodo": 10
+  },
+  "nota_final": "nota_max + extras_max (sem extras nesta prova) — no CI cada camada e binaria (status por camada); o detalhamento por erro (proporcao dentro de B/C/D) e o refinamento de E sao feitos na correcao docente reexecutando o mesmo ambiente.",
+  "aviso": "Prova real 2026 — o feedback do CI diz o STATUS de cada camada (passou/falhou), nunca onde esta o erro: diagnosticar e o objeto da prova. Regressao (quebrar o que funcionava, trocar a stack, apagar endpoints) zera o criterio A. Janela: 120 minutos de enforcement (divulgada como 1h30). Os testes escondidos podem cobrar a gestao do SDLC da entrega (higiene, segredos, linters genericos)."
+}

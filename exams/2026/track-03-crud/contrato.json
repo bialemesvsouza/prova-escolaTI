@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "titulo": "Prova 01 · Track 03 — Fila de Atendimento (CRUD com suíte)",
+    "versao": "2026",
+    "track": "track-03-crud",
+    "aviso": "API REST de senhas para atendimento presencial. A suíte de testes valida este contrato EXATAMENTE — inclusive status codes, nomes de campos e regras de negócio. Este arquivo é a versão máquina-legível do contrato; o README.md explica o contexto e as regras da prova."
+  },
+  "variante": {
+    "descricao": "A variante de cada aluno deriva do NOME DO REPOSITORIO aplicado a estas tabelas (hash sha256 modulo o tamanho de cada tabela). A correcao recomputa os mesmos valores — copiar params.json de colega nao funciona.",
+    "PREFIXOS": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+    ],
+    "RAZOES": [
+      2,
+      3
+    ],
+    "PORTA_BASE": 9201,
+    "FAIXA": 5,
+    "uso": {
+      "PREFIXO": "Prefixo de todas as senhas emitidas (1 letra maiuscula) — codigo = PREFIXO + sequencia de 3 digitos",
+      "RAZAO_PREFERENCIAL": "Quantas senhas preferenciais sao chamadas antes de 1 normal (ciclo)",
+      "PORTA_API": "Porta no host em que a suíte publicara seu container"
+    }
+  },
+  "servidor": {
+    "porta_interna": 8080,
+    "fuso": "-03:00",
+    "base_url_suite": "http://localhost:{PORTA_API}",
+    "sem_env_obrigatoria": true,
+    "persistencia": "Os testes PUBLICOS aceitam persistencia em memoria (container fresco). Mas a suite ESCONDIDA (correcao docente) recria seu container montando um volume em /data: seus dados (fila, sequencia, painel) devem SOBREVIVER a essa recriacao. Persista em arquivo/banco sob /data; se /data nao existir ou nao for gravavel (testes locais/publicos), pode cair em memoria.",
+    "observacao": "A suíte sobe o container com `docker run -p {PORTA_API}:8080` e aguarda GET /healthz responder 200. Data/hora em ISO-8601 com fuso -03:00."
+  },
+  "endpoints": [
+    {
+      "id": "healthz",
+      "metodo": "GET",
+      "path": "/healthz",
+      "descricao": "Verificacao de saude — usada pela suíte para aguardar a API subir.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "status": "ok"
+          }
+        }
+      }
+    },
+    {
+      "id": "emitir_senha",
+      "metodo": "POST",
+      "path": "/senhas",
+      "descricao": "Emite uma nova senha de atendimento.",
+      "requisicao": {
+        "body": {
+          "tipo": "obrigatório — 'normal' ou 'preferencial'"
+        }
+      },
+      "respostas": {
+        "201": {
+          "corpo": {
+            "codigo": "A001",
+            "tipo": "normal",
+            "emissao": "<ISO-8601 com fuso -03:00>",
+            "status": "aguardando"
+          }
+        },
+        "422": {
+          "corpo": {
+            "erro": "tipo_invalido"
+          },
+          "quando": "tipo ausente ou diferente de 'normal'/'preferencial'"
+        }
+      },
+      "regras": [
+        "codigo = PREFIXO da variante + sequencia de 3 digitos com zeros a esquerda (A001, A002, ...), reiniciando a cada dia",
+        "Na pratica da correcao a suíte sobe um container fresco (sequencia comeca do zero); implemente a regra de reinicio mesmo assim — os testes escondidos podem simular dois dias"
+      ]
+    },
+    {
+      "id": "proxima_senha",
+      "metodo": "GET",
+      "path": "/senhas/proxima",
+      "descricao": "Chama a proxima senha respeitando a regra de prioridade da variante.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "codigo": "N001",
+            "tipo": "normal",
+            "emissao": "<ISO-8601>",
+            "status": "chamada",
+            "chamada_em": "<ISO-8601 com fuso -03:00>"
+          }
+        },
+        "404": {
+          "corpo": {
+            "erro": "fila_vazia"
+          },
+          "quando": "nao ha senha aguardando"
+        }
+      },
+      "regras": [
+        "Prioridade: chama-se ate RAZAO_PREFERENCIAL senhas preferenciais seguidas e, entao, 1 normal; o ciclo recomeca",
+        "Se so houver senhas de um tipo, chama-se o que houver",
+        "A senha chamada sai do estado 'aguardando' para 'chamada' e registra 'chamada_em'"
+      ]
+    },
+    {
+      "id": "concluir_senha",
+      "metodo": "POST",
+      "path": "/senhas/{codigo}/concluir",
+      "descricao": "Conclui o atendimento de uma senha previamente chamada.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "status": "concluida",
+            "observacao": "mesmo formato da senha, com status 'concluida'"
+          }
+        },
+        "404": {
+          "corpo": {
+            "erro": "senha_nao_encontrada"
+          },
+          "quando": "codigo inexistente"
+        },
+        "409": {
+          "corpo": {
+            "erro": "senha_nao_chamada"
+          },
+          "quando": "a senha existe mas NAO esta no status 'chamada'"
+        }
+      }
+    },
+    {
+      "id": "rechamar_senha",
+      "metodo": "POST",
+      "path": "/senhas/{codigo}/rechamar",
+      "descricao": "Rechama uma senha ja chamada (cliente nao compareceu): atualiza 'chamada_em' e a joga para o topo do painel.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "status": "chamada",
+            "observacao": "mesmo formato, status 'chamada' e 'chamada_em' atualizado"
+          }
+        },
+        "404": {
+          "corpo": {
+            "erro": "senha_nao_encontrada"
+          },
+          "quando": "codigo inexistente"
+        },
+        "409": {
+          "corpo": {
+            "erro": "senha_nao_chamada"
+          },
+          "quando": "a senha existe mas NAO esta 'chamada'"
+        }
+      }
+    },
+    {
+      "id": "cancelar_senha",
+      "metodo": "POST",
+      "path": "/senhas/{codigo}/cancelar",
+      "descricao": "Cancela uma senha que ainda aguarda (desistencia): sai da fila e NAO entra no painel.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "status": "cancelada",
+            "observacao": "mesmo formato, status 'cancelada'"
+          }
+        },
+        "404": {
+          "corpo": {
+            "erro": "senha_nao_encontrada"
+          },
+          "quando": "codigo inexistente"
+        },
+        "409": {
+          "corpo": {
+            "erro": "senha_nao_aguardando"
+          },
+          "quando": "a senha existe mas NAO esta 'aguardando'"
+        }
+      }
+    },
+    {
+      "id": "painel",
+      "metodo": "GET",
+      "path": "/painel",
+      "descricao": "Painel de chamadas recentes.",
+      "respostas": {
+        "200": {
+          "corpo": {
+            "chamadas": [
+              "..."
+            ]
+          },
+          "regra": "As 5 ultimas senhas CHAMADAS (qualquer status posterior), da mais recente para a mais antiga"
+        }
+      }
+    }
+  ],
+  "exemplo_inconsistente": {
+    "aviso": "TRAMPA T7 — o 'exemplo observado em producao' abaixo CONTRADIZ a regra de prioridade de proposito. A regra manda, nao o exemplo. Confie no contrato.",
+    "conteudo": "GET /senhas/proxima respondeu primeiro {\"codigo\": \"N001\", \"tipo\": \"normal\"}",
+    "por_que_esta_errado": "Com a fila contendo preferenciais aguardando, a primeira chamada NUNCA e uma normal — a regra de prioridade (ate RAZAO_PREFERENCIAL preferenciais antes de 1 normal) prevalece sobre qualquer exemplo."
+  },
+  "exigencias_tecnicas": [
+    "API escuta na porta 8080 DENTRO do container",
+    "Containerfile na raiz: o build seguido de `run -p {PORTA_API}:8080` deve subir a API sem variaveis de ambiente obrigatorias",
+    "Persistencia sob /data: a suite escondida recria o container com volume montado em /data e exige fila/sequencia/painel preservados (publicos nao exigem — memoria basta neles)",
+    "Data/hora em ISO-8601 com fuso -03:00",
+    "Status code, formato de payload e validacao errados contam como teste falho — a suíte e binaria por caso de teste, sem 'meio ponto'",
+    "Concorrencia: emissoes simultaneas NUNCA podem repetir codigo (a suite escondida dispara rajadas concorrentes)",
+    "Os testes escondidos podem cobrar o processo de gestao do SDLC da entrega (higiene de codigo, segredos, linters genericos da linguagem)"
+  ]
+}

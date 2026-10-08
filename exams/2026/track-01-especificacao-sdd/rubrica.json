@@ -1,0 +1,14 @@
+{
+  "nota_max": 100,
+  "extras_max": 0,
+  "janela_minutos": 120,
+  "criterios": {
+    "A_contrato_rest": 30,
+    "B_casos_de_borda": 25,
+    "C_requisitos_escondidos": 15,
+    "D_sdlc_codigo_gerado": 15,
+    "E_qualidade_mecanica_md": 15
+  },
+  "nota_final": "nota_max + extras_max (sem extras nesta prova) — A-D (85 pts) sao avaliados na correcao docente (modelo fixo + suite escondida sobre o codigo gerado); E (15 pts) e mecanico e sai no CI (job md).",
+  "aviso": "Prova real 2026 — a nota do CI e PARCIAL: cobre integralmente o criterio E e valida o formato da entrega; A-D rodam fora do CI do aluno, na correcao do professor. Bloco de codigo > 20 linhas em qualquer .md ZERA a prova (fatal no job md). Janela: 120 minutos de enforcement (divulgada como 1h30). Os testes escondidos podem cobrar a gestao do SDLC da entrega (higiene, segredos, linters genericos)."
+}

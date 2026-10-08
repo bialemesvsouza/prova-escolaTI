@@ -1,0 +1,13 @@
+{
+  "nota_max": 100,
+  "extras_max": 0,
+  "janela_minutos": 120,
+  "criterios": {
+    "testes_publicos": 20,
+    "testes_escondidos": 60,
+    "dockerfile": 15,
+    "readme": 5
+  },
+  "nota_final": "nota_max + extras_max (sem extras nesta prova) — a base vem dos criterios: testes_publicos (2 casos, pytest) + testes_escondidos (proporcao dos que passarem, rodam so na correcao do docente) + dockerfile + readme.",
+  "aviso": "Prova real 2026 — a nota do CI e PARCIAL: a suíte escondida (60 pts) nao roda no CI do aluno; a nota definitiva e apurada pelo professor no repo privado de correcao. A escondida cobra alem dos publicos: casos de borda, erros 404/409/422, painel, rechamada/cancelamento, CONCORRENCIA (rajadas simultaneas sem codigo duplicado), PERSISTENCIA (recria o container com volume em /data e exige estado preservado — os publicos aceitam memoria). Janela: 120 minutos de enforcement (divulgada como 1h30)."
+}

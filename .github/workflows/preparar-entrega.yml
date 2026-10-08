@@ -1,0 +1,48 @@
+name: Preparar entrega (issue da prova)
+
+# "Sistema de prova": o aluno marca os checkboxes (ou comenta) na issue unica
+# "🎯 Prova" (lock .prova/issue) aberta pelo setup; este workflow valida a
+# preparacao (ALUNO.md com RA, identidade, variante, FONTES.md), mantem o
+# /track e responde na propria issue. O fechamento da issue encerra a prova
+# (fechar-prova.yml) — aqui nao fechamos nada.
+
+on:
+  issues:
+    types: [edited, closed, reopened]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  # validacao mais recente vence — resolve o checkbox-spam (issues: edited)
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  issues: write
+  contents: write
+
+env:
+  REPO_SLUG: ${{ github.event.repository.name }}
+  REPO_FULL: ${{ github.repository }}
+  TEMPLATE_URL: ${{ vars.TEMPLATE_URL || 'https://github.com/endersonmenezes/exam-escola-ti.git' }}
+  ISSUE_NUMBER: ${{ github.event.issue.number }}
+  ISSUE_COMMENT_BODY: ${{ github.event.comment.body }}
+
+jobs:
+  preparar:
+    name: Validar preparação e responder na issue
+    # no-op: repositorio-template; fechamento (quem reage ao close e o
+    # fechar-prova.yml); e comentarios que nao sejam comando atendido aqui
+    # (/track <nome>, /ajuda, --help) — /auto-correcao e conversa ficam em
+    # silencio total (a auto-correcao responde pela propria run)
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && github.event.action != 'closed' && (github.event_name != 'issue_comment' || contains(github.event.comment.body, '/track ') || contains(github.event.comment.body, '/ajuda') || contains(github.event.comment.body, '--help'))
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: validar e responder (no-op se não for a issue da prova)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/preparar_entrega.py

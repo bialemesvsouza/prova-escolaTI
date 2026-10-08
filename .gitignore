@@ -1,0 +1,45 @@
+# ---- SO / editores ----
+.DS_Store
+*.icloud
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- Segredos / ambiente ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- Saida da correção (nunca commitar) ----
+resultados/
+result-*.json
+nota.json
+pytest.log
+
+# ---- Polyglot (stack é livre) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+node_modules/
+dist/
+build/
+target/
+*.class
+bin/
+obj/
+*.o
+*.out
+vendor/
+
+# ---- NÃO ignorar: .prova/, variante/ e a pasta do ano são commitados
+#      pelo bot (GITHUB_TOKEN) nos repositórios dos alunos.
+
+# ---- _docente/ (LEGADO — rede de segurança): o material do professor vive
+#      na RAIZ do repo PRIVADO teacher-escola-ti; esta entrada só evita que
+#      um _docente/ residual seja commitado aqui por engano.
+_docente/

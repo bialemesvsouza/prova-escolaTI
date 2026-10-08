@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "titulo": "Prova teste — Hello World",
+    "versao": "2026-dummy",
+    "track": "dummy-hello-world",
+    "aviso": "Contrato DUMMY — prova-teste permanente do sistema (hello world em Python). Serve para validar o sistema e treinar o ciclo de entrega em qualquer ano; a prova real de cada ano substitui este arquivo por completo."
+  },
+  "variante": {
+    "descricao": "A variante de cada aluno deriva do NOME DO REPOSITORIO aplicado a estas tabelas (hash sha256 modulo o tamanho de cada tabela). A correcao recompute os mesmos valores — copiar params.json de colega nao funciona.",
+    "PREFIXOS": ["Mundo", "Turma", "Devs", "Maringa", "Professor", "QA"],
+    "RAZOES": [1, 2, 3],
+    "PORTA_BASE": 9201,
+    "FAIXA": 5,
+    "SAUDACOES": ["Ola", "Oii", "Hi", "Hello", "Eai", "Salve"],
+    "SUFIXOS": ["!", "!!", " :)", " :D", " o/", " <3"]
+  },
+  "servidor": {
+    "porta_interna": 8080,
+    "fuso": "-03:00",
+    "base_url_suite": "http://localhost:{PORTA_API}",
+    "sem_env_obrigatoria": true,
+    "observacao": "A suíte sobe o container com `docker run -p {PORTA_API}:8080` e aguarda GET /healthz responder 200. `PORT` (opcional) sobrescreve a porta interna apenas para testes locais."
+  },
+  "endpoints": [
+    {
+      "id": "healthz",
+      "metodo": "GET",
+      "path": "/healthz",
+      "descricao": "Verificacao de saude — usada pela suíte para aguardar a API subir.",
+      "respostas": {
+        "200": { "corpo": { "status": "ok" } }
+      }
+    },
+    {
+      "id": "saudar",
+      "metodo": "GET",
+      "path": "/saudar",
+      "descricao": "Imprime uma saudacao em texto puro. É o coração do hello world: a suíte chama este endpoint com os parâmetros DA SUA VARIANTE e confere o texto exato.",
+      "requisicao": {
+        "query": {
+          "nome": "obrigatório — quem recebe a saudação",
+          "saudacao": "opcional — default 'Ola'",
+          "sufixo": "opcional — default '!'",
+          "repeticoes": "opcional — default 1 — inteiro entre 1 e 10"
+        }
+      },
+      "respostas": {
+        "200": {
+          "content_type": "text/plain; charset=utf-8",
+          "corpo": "{SAUDACAO}, {NOME}{SUFIXO} repetido REPETICOES vezes — uma linha por repetição, terminando com \\n",
+          "exemplo": "GET /saudar?saudacao=Ola&nome=Mundo&sufixo=!&repeticoes=2 → corpo \"Ola, Mundo!\\nOla, Mundo!\\n\""
+        },
+        "400": {
+          "corpo": { "erro": "nome_ausente | repeticoes_invalidas" },
+          "quando": "nome ausente/vazio → nome_ausente; repeticoes não inteira ou fora de 1..10 → repeticoes_invalidas"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "track": "dummy-hello-world",
+  "lockfile_version": 1,
+  "workflows": {
+    "auto-correcao.trampas": true,
+    "auto-correcao.estrutura": true,
+    "auto-correcao.testes-publicos": true,
+    "auto-correcao.testes-escondidos": false,
+    "auto-correcao.nota": true
+  },
+  "suites": {
+    "publicos": {
+      "path": "tests/public",
+      "runner": "scripts/rodar_testes.sh",
+      "pontos": 70
+    }
+  },
+  "recursos": {
+    "frontend": false,
+    "docker": true,
+    "variante": true
+  }
+}

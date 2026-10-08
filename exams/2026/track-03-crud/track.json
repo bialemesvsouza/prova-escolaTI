@@ -1,0 +1,28 @@
+{
+  "track": "track-03-crud",
+  "lockfile_version": 1,
+  "workflows": {
+    "auto-correcao.trampas": true,
+    "auto-correcao.estrutura": true,
+    "auto-correcao.testes-publicos": true,
+    "auto-correcao.testes-escondidos": false,
+    "auto-correcao.nota": true
+  },
+  "suites": {
+    "publicos": {
+      "path": "tests/public",
+      "runner": "scripts/rodar_testes.sh",
+      "pontos": 20
+    },
+    "escondidos": {
+      "via": "CORRECAO_REPO",
+      "pontos": 60,
+      "observacao": "Suite escondida existe no repo privado teacher-escola-ti (suites/2026/track-03-crud/, roda via run_suite.sh na maquina do docente — inclusive o teste de persistencia com recriacao do container e volume /data). O job CI fica false ate existir a cola automatica (correcao/run.py) que a dispare; ate la, correcao manual do docente."
+    }
+  },
+  "recursos": {
+    "frontend": false,
+    "docker": true,
+    "variante": true
+  }
+}

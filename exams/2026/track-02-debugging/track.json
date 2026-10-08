@@ -1,0 +1,49 @@
+{
+  "track": "track-02-debugging",
+  "lockfile_version": 1,
+  "workflows": {
+    "auto-correcao.trampas": true,
+    "auto-correcao.estrutura": false,
+    "auto-correcao.testes-publicos": false,
+    "auto-correcao.testes-escondidos": false,
+    "auto-correcao.md": false,
+    "auto-correcao.compila": true,
+    "auto-correcao.sobe": true,
+    "auto-correcao.smoke": true,
+    "auto-correcao.metodo": true,
+    "auto-correcao.nota": true
+  },
+  "suites": {
+    "compila": {
+      "cmd": "mvn -B -q package -DskipTests",
+      "dir": "backend",
+      "pontos": 25,
+      "criterio": "B (compilação)"
+    },
+    "sobe": {
+      "compose_file": "compose.yaml",
+      "servicos_esperados": 3,
+      "espera_s": 45,
+      "pontos": 20,
+      "criterio": "C (configuração)"
+    },
+    "smoke": {
+      "compose_file": "compose.yaml",
+      "script": "smoke_track.py",
+      "espera_s": 45
+    },
+    "metodo": {
+      "pontos": 10,
+      "relatorio": "backend/README.md"
+    },
+    "escondidos": {
+      "via": "CORRECAO_REPO",
+      "observacao": "Proporcao fina por erro (dentro de B/C/D) e refinado na correcao docente, reexecutando o mesmo ambiente — vivera no repo privado teacher-escola-ti. No CI cada camada e binaria por design."
+    }
+  },
+  "recursos": {
+    "frontend": true,
+    "docker": true,
+    "variante": true
+  }
+}

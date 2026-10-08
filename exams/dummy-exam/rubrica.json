@@ -1,0 +1,12 @@
+{
+  "nota_max": 100,
+  "extras_max": 0,
+  "janela_minutos": 120,
+  "criterios": {
+    "testes_publicos": 70,
+    "dockerfile": 20,
+    "readme": 10
+  },
+  "nota_final": "nota_max + extras_max (sem extras nesta prova-teste) — a base vem dos criterios: testes_publicos (pytest, peso maior) + dockerfile + readme.",
+  "aviso": "Rubrica dummy (prova-teste permanente hello world). Sem suíte escondida e sem extras — a nota do CI ja e a nota desta prova-teste (trampas + entrega + testes publicos). Janela: 120 minutos (1h30)."
+}

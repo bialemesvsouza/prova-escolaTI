@@ -1,0 +1,293 @@
+name: Auto-correção — exam-escola-ti
+
+# Correção SOB DEMANDA (v3.4): a correção completa (trampas + entrega +
+# testes públicos + nota) roda quando o ALUNO PEDE — comentando
+# `/auto-correcao` na issue "🎯 Prova" — ou pelo workflow_dispatch (botão,
+# professor/aluno). Pushes NÃO disparam correção (economia de CI e foco em
+# commits pequenos, não em ficar olhando o pipeline). A correção é OBRIGATÓRIA
+# ao menos 1x antes de fechar a issue: o fechar-prova reabre a issue com aviso
+# se a marcação de nota (`<!-- nota-parcial -->`) ainda não existir.
+#
+# Workflows sao do ESQUELETO (sempre os mesmos) e cada track LIGA/DESLIGA seus
+# jobs via lockfile track.json (vem na pasta do ano, overlay na raiz).
+# Sem lockfile = prova nao aplicada: tudo fica desligado (jobs "skipped").
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      inicio:
+        description: "Início da janela da prova (ISO, ex. 2026-10-12T19:00)"
+        required: false
+      fim:
+        description: "Fim da janela da prova (ISO)"
+        required: false
+
+permissions:
+  contents: read
+  issues: write   # job de nota replica a nota parcial na issue unica da prova
+
+concurrency:
+  # sob demanda: pedidos seguidos coalesce — a corrida mais recente vence
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REPO_SLUG: ${{ github.event.repository.name }}
+
+jobs:
+  config:
+    name: Lockfile da track (liga/desliga os jobs)
+    # sobe para dispatch ou para comentario "/auto-correcao" na issue
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && (github.event_name != 'issue_comment' || contains(github.event.comment.body, '/auto-correcao'))
+    runs-on: ubuntu-slim
+    outputs:
+      aplicada: ${{ steps.lock.outputs.aplicada }}
+      trampas: ${{ steps.lock.outputs.trampas }}
+      estrutura: ${{ steps.lock.outputs.estrutura }}
+      testes_publicos: ${{ steps.lock.outputs.testes_publicos }}
+      testes_escondidos: ${{ steps.lock.outputs.testes_escondidos }}
+      md: ${{ steps.lock.outputs.md }}
+      compila: ${{ steps.lock.outputs.compila }}
+      sobe: ${{ steps.lock.outputs.sobe }}
+      smoke: ${{ steps.lock.outputs.smoke }}
+      metodo: ${{ steps.lock.outputs.metodo }}
+      nota: ${{ steps.lock.outputs.nota }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: ler track.json (ver docs/TRACKS.md)
+        id: lock
+        run: |
+          echo "aplicada=$(python scripts/track_lock.py get aplicada)" >> "$GITHUB_OUTPUT"
+          echo "trampas=$(python scripts/track_lock.py get workflows.auto-correcao.trampas)" >> "$GITHUB_OUTPUT"
+          echo "estrutura=$(python scripts/track_lock.py get workflows.auto-correcao.estrutura)" >> "$GITHUB_OUTPUT"
+          echo "testes_publicos=$(python scripts/track_lock.py get workflows.auto-correcao.testes-publicos)" >> "$GITHUB_OUTPUT"
+          echo "testes_escondidos=$(python scripts/track_lock.py get workflows.auto-correcao.testes-escondidos)" >> "$GITHUB_OUTPUT"
+          echo "md=$(python scripts/track_lock.py get workflows.auto-correcao.md)" >> "$GITHUB_OUTPUT"
+          echo "compila=$(python scripts/track_lock.py get workflows.auto-correcao.compila)" >> "$GITHUB_OUTPUT"
+          echo "sobe=$(python scripts/track_lock.py get workflows.auto-correcao.sobe)" >> "$GITHUB_OUTPUT"
+          echo "smoke=$(python scripts/track_lock.py get workflows.auto-correcao.smoke)" >> "$GITHUB_OUTPUT"
+          echo "metodo=$(python scripts/track_lock.py get workflows.auto-correcao.metodo)" >> "$GITHUB_OUTPUT"
+          echo "nota=$(python scripts/track_lock.py get workflows.auto-correcao.nota)" >> "$GITHUB_OUTPUT"
+
+  trampas:
+    name: Trampas (identidade, autoria, janela, integridade)
+    needs: config
+    # gate duplo: prova aplicada + chave da track (docs/TRACKS.md — cada job
+    # so roda se sua chave em workflows for true).
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && needs.config.outputs.aplicada == 'true' && needs.config.outputs.trampas == 'true'
+    runs-on: ubuntu-slim
+    outputs:
+      zerado: ${{ steps.check.outputs.zerado }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - id: check
+        env:
+          CORRECAO_TOKEN: ${{ secrets.CORRECAO_TOKEN }}
+          TEMPLATE_REPO: ${{ vars.TEMPLATE_REPO }}
+          JANELA_INICIO: ${{ inputs.inicio }}
+          JANELA_FIM: ${{ inputs.fim }}
+        run: python scripts/check_trampas.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-trampas
+          path: result-trampas.json
+          if-no-files-found: ignore
+
+  estrutura:
+    name: Dockerfile + README (critérios funcionais de entrega)
+    needs: [config, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.estrutura == 'true' && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_entrega.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-entrega
+          path: result-entrega.json
+          if-no-files-found: ignore
+
+  testes-publicos:
+    name: Testes públicos (suíte da track)
+    needs: [config, estrutura, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && needs.config.outputs.testes_publicos == 'true' && always() && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 -m pip install --quiet pytest
+      - name: build + sobe + pytest
+        run: |
+          set -o pipefail
+          bash scripts/rodar_testes.sh 2>&1 | tee pytest.log
+      - if: always()
+        run: python3 scripts/score_publicos.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-publicos
+          path: result-publicos.json
+          if-no-files-found: ignore
+
+  testes-escondidos:
+    name: Testes escondidos (via repo de correção)
+    needs: [config, estrutura, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && needs.config.outputs.testes_escondidos == 'true' && always() && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: suite escondida
+        env:
+          CORRECAO_TOKEN: ${{ secrets.CORRECAO_TOKEN }}
+          CORRECAO_REPO: ${{ vars.CORRECAO_REPO }}
+        run: |
+          if [ -z "$CORRECAO_TOKEN" ] || [ -z "$CORRECAO_REPO" ]; then
+            echo "suíte escondida não roda no CI — a correção é executada manualmente pelo professor fora do CI; skip por design (sem CORRECAO_TOKEN/CORRECAO_REPO)."
+            exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:${CORRECAO_TOKEN}@github.com/${CORRECAO_REPO}.git" correcao
+          python3 correcao/run.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-escondidos
+          path: result-escondidos.json
+          if-no-files-found: ignore
+
+  md:
+    name: Qualidade mecânica dos .md (critério E — tracks de especificação)
+    needs: [config, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.md == 'true' && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_md.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-md
+          path: result-md.json
+          if-no-files-found: ignore
+
+  compila:
+    name: Camada 1 — compilação (tracks de debugging)
+    needs: [config, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.compila == 'true' && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # stack JVM por padrao (tracks de debugging 2026); outra stack = novo job
+      # (ver "Estender o sistema" em docs/TRACKS.md)
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - run: python scripts/check_build.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-compila
+          path: result-compila.json
+          if-no-files-found: ignore
+
+  sobe:
+    name: Camada 2 — subida do ambiente (tracks de debugging)
+    needs: [config, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.sobe == 'true' && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_sobe.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-sobe
+          path: result-sobe.json
+          if-no-files-found: ignore
+
+  smoke:
+    name: Smoke de ponta a ponta (tracks de debugging)
+    needs: [config, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.smoke == 'true' && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python scripts/smoke.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-smoke
+          path: result-smoke.json
+          if-no-files-found: ignore
+
+  metodo:
+    name: Método sistemático (tracks de debugging)
+    needs: [config, trampas]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.metodo == 'true' && needs.trampas.outputs.zerado != 'true'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_metodo.py
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-metodo
+          path: result-metodo.json
+          if-no-files-found: ignore
+
+  nota:
+    name: Nota parcial
+    needs: [config, trampas, estrutura, testes-publicos, testes-escondidos, md, compila, sobe, smoke, metodo]
+    if: github.repository != 'endersonmenezes/exam-escola-ti' && always() && needs.config.outputs.aplicada == 'true' && needs.config.outputs.nota == 'true'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v8
+        with:
+          path: resultados
+          pattern: result-*
+          merge-multiple: true
+      - run: python scripts/nota.py resultados
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_FULL: ${{ github.repository }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nota
+          path: nota.json
+          if-no-files-found: ignore

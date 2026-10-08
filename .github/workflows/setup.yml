@@ -1,0 +1,38 @@
+name: Setup da prova (primeiro push após "Use this template")
+
+# Não existe evento "template usado" no GitHub Actions: a geração do repo a
+# partir do template cria um commit inicial que dispara `push`. O script é
+# idempotente (arquivo-sentinela .prova/setup-done) — roda de verdade só uma vez.
+
+on:
+  push:
+
+concurrency:
+  # bootstrap deve completar — eventos em fila
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  REPO_SLUG: ${{ github.event.repository.name }}
+  REPO_FULL: ${{ github.repository }}
+  TEMPLATE_URL: ${{ vars.TEMPLATE_URL || 'https://github.com/endersonmenezes/exam-escola-ti.git' }}
+
+jobs:
+  bootstrap:
+    name: Setup — identidade, ALUNO.md, README e issue única 🎯 Prova
+    # O repositorio-template nao e uma prova: workflows no-op la dentro
+    if: github.repository != 'endersonmenezes/exam-escola-ti'
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: bootstrap (idempotente)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/setup_prova.py

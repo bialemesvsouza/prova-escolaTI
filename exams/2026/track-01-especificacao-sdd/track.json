@@ -1,0 +1,29 @@
+{
+  "track": "track-01-especificacao-sdd",
+  "lockfile_version": 1,
+  "workflows": {
+    "auto-correcao.trampas": true,
+    "auto-correcao.estrutura": false,
+    "auto-correcao.testes-publicos": false,
+    "auto-correcao.testes-escondidos": false,
+    "auto-correcao.md": true,
+    "auto-correcao.nota": true
+  },
+  "suites": {
+    "md": {
+      "pontos": 15,
+      "pts_por_arquivo": 3,
+      "max_linhas_bloco": 20
+    },
+    "escondidos": {
+      "via": "CORRECAO_REPO",
+      "pontos": 85,
+      "observacao": "Criterios A-D (85 pts) corrigidos pelo docente: os .md do aluno passam por um modelo de IA fixo que gera o codigo, e a suite escondida (A: contrato REST 30, B: casos de borda 25, C: requisitos escondidos 15, D: SDLC 15) avalia o resultado. Vivera no repo privado teacher-escola-ti — ainda nao publicada."
+    }
+  },
+  "recursos": {
+    "frontend": false,
+    "docker": false,
+    "variante": true
+  }
+}
