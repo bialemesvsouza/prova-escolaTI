@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fila Clara · Atendimento</title>
+  <style>
+    :root {
+      --ink: #18211d; --muted: #66736d; --paper: #f4f0e7; --card: #fffdf7;
+      --forest: #173f32; --mint: #b8e1ca; --coral: #f07d62; --line: #d9d4c8;
+      --shadow: 0 18px 55px rgba(34, 49, 42, .12);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    button { font: inherit; }
+    .shell { min-height: 100vh; padding: 28px; }
+    header { max-width: 1180px; margin: 0 auto 22px; display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .mark { width: 42px; height: 42px; border-radius: 14px; background: var(--forest); display: grid; place-items: center; color: white; font-weight: 900; }
+    h1, h2, p { margin: 0; }
+    h1 { font-family: Georgia, serif; font-size: 22px; letter-spacing: -.4px; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
+    .health { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.55); color: var(--muted); font-size: 13px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #20a464; box-shadow: 0 0 0 4px rgba(32,164,100,.12); }
+    main { max-width: 1180px; margin: auto; display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; }
+    .card { background: var(--card); border: 1px solid rgba(116,112,101,.18); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; }
+    .hero { padding: 34px; background: var(--forest); color: white; min-height: 320px; position: relative; }
+    .hero::after { content: ""; position: absolute; width: 230px; height: 230px; border-radius: 50%; right: -80px; top: -90px; border: 45px solid rgba(184,225,202,.12); }
+    .eyebrow { text-transform: uppercase; letter-spacing: .15em; color: var(--mint); font-size: 11px; font-weight: 800; }
+    .hero h2 { max-width: 560px; font: 54px/1 Georgia, serif; letter-spacing: -2px; margin: 18px 0 14px; }
+    .hero p { color: rgba(255,255,255,.68); max-width: 520px; line-height: 1.55; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+    .btn { border: 0; border-radius: 14px; padding: 13px 17px; cursor: pointer; font-weight: 760; transition: transform .15s, opacity .15s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+    .primary { color: var(--forest); background: var(--mint); }
+    .secondary { color: white; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); }
+    .call { color: white; background: var(--coral); }
+    .current { padding: 28px 30px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--line); }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
+    .ticket-code { font: 52px/1 Georgia, serif; margin-top: 8px; }
+    .pill { display: inline-flex; padding: 7px 11px; border-radius: 999px; background: #edf5ef; color: #286044; font-size: 12px; font-weight: 800; }
+    .side { display: grid; gap: 20px; }
+    .panel-head { padding: 24px 24px 16px; display: flex; justify-content: space-between; align-items: end; }
+    .panel-head h2 { font: 28px Georgia, serif; }
+    .calls { padding: 0 14px 16px; min-height: 260px; }
+    .call-row { display: grid; grid-template-columns: 58px 1fr auto; gap: 14px; align-items: center; padding: 14px 10px; border-top: 1px solid var(--line); }
+    .call-row:first-child { background: #f2f7f3; border-radius: 14px; border: 0; }
+    .code-small { font: 21px Georgia, serif; }
+    .kind { color: var(--muted); font-size: 13px; }
+    .status { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; color: var(--forest); }
+    .empty { color: var(--muted); padding: 44px 14px; text-align: center; line-height: 1.55; }
+    .queue { padding: 24px; }
+    .queue h2 { font: 25px Georgia, serif; margin-bottom: 14px; }
+    .issued { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ticket-chip { border: 1px solid var(--line); background: white; border-radius: 12px; padding: 9px 10px; display: flex; gap: 8px; align-items: center; }
+    .ticket-chip button { border: 0; background: transparent; color: var(--coral); cursor: pointer; font-weight: 900; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: white; padding: 12px 16px; border-radius: 12px; opacity: 0; pointer-events: none; transition: .2s; box-shadow: var(--shadow); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-width: 840px) { main { grid-template-columns: 1fr; } .hero h2 { font-size: 42px; } .shell { padding: 16px; } header { align-items: flex-start; } .health { font-size: 0; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><div class="mark">FC</div><div><h1>Fila Clara</h1><p class="sub">Atendimento organizado, sem complicação.</p></div></div>
+      <div class="health"><span class="dot"></span><span id="healthText">API conectada</span></div>
+    </header>
+    <main>
+      <section class="card">
+        <div class="hero">
+          <div class="eyebrow">Controle de atendimento</div>
+          <h2>Uma fila mais humana.</h2>
+          <p>Emita senhas, aplique a prioridade automaticamente e mantenha o painel sempre atualizado.</p>
+          <div class="actions">
+            <button class="btn primary" onclick="issue('preferencial')">+ Senha preferencial</button>
+            <button class="btn secondary" onclick="issue('normal')">+ Senha normal</button>
+            <button class="btn call" onclick="callNext()">Chamar próxima</button>
+          </div>
+        </div>
+        <div class="current">
+          <div><div class="label">Em atendimento agora</div><div class="ticket-code" id="currentCode">—</div></div>
+          <div style="text-align:right"><span class="pill" id="currentKind">Aguardando chamada</span><div class="actions" style="justify-content:flex-end;margin-top:12px"><button id="recall" class="btn secondary" style="color:var(--forest);border-color:var(--line)" onclick="actCurrent('rechamar')" disabled>Rechamar</button><button id="finish" class="btn primary" onclick="actCurrent('concluir')" disabled>Concluir</button></div></div>
+        </div>
+      </section>
+      <aside class="side">
+        <section class="card">
+          <div class="panel-head"><div><div class="label">Últimas chamadas</div><h2>Painel</h2></div><button class="btn secondary" style="color:var(--forest);border-color:var(--line);padding:9px 12px" onclick="loadPanel()">Atualizar</button></div>
+          <div class="calls" id="calls"><div class="empty">Nenhuma senha chamada ainda.</div></div>
+        </section>
+        <section class="card queue"><div class="label">Emitidas nesta tela</div><h2>Senhas aguardando</h2><div class="issued" id="issued"><span class="kind">Emita uma senha para começar.</span></div></section>
+      </aside>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    let current = null;
+    let waiting = [];
+    const toast = (message) => { const el = document.getElementById('toast'); el.textContent = message; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2300); };
+    async function api(path, options = {}) { const response = await fetch(path, {headers:{'Content-Type':'application/json'}, ...options}); const body = await response.json(); if (!response.ok) throw new Error(body.erro || 'Erro na API'); return body; }
+    async function issue(tipo) { try { const ticket = await api('/senhas', {method:'POST', body:JSON.stringify({tipo})}); waiting.push(ticket); renderWaiting(); toast(`Senha ${ticket.codigo} emitida`); } catch (e) { toast(e.message); } }
+    async function callNext() { try { current = await api('/senhas/proxima'); waiting = waiting.filter(t => t.codigo !== current.codigo); renderCurrent(); renderWaiting(); await loadPanel(); toast(`Chamando ${current.codigo}`); } catch (e) { toast(e.message === 'fila_vazia' ? 'A fila está vazia' : e.message); } }
+    async function actCurrent(action) { if (!current) return; try { current = await api(`/senhas/${current.codigo}/${action}`, {method:'POST'}); renderCurrent(); await loadPanel(); toast(action === 'concluir' ? 'Atendimento concluído' : 'Senha rechamada'); } catch (e) { toast(e.message); } }
+    async function cancel(code) { try { await api(`/senhas/${code}/cancelar`, {method:'POST'}); waiting = waiting.filter(t => t.codigo !== code); renderWaiting(); toast(`Senha ${code} cancelada`); } catch (e) { toast(e.message); } }
+    function renderCurrent() { document.getElementById('currentCode').textContent = current?.codigo || '—'; document.getElementById('currentKind').textContent = current ? `${current.tipo} · ${current.status}` : 'Aguardando chamada'; const active = current?.status === 'chamada'; document.getElementById('recall').disabled = !active; document.getElementById('finish').disabled = !active; }
+    function renderWaiting() { const root = document.getElementById('issued'); root.innerHTML = waiting.length ? waiting.map(t => `<span class="ticket-chip"><strong>${t.codigo}</strong><span class="kind">${t.tipo}</span><button title="Cancelar" onclick="cancel('${t.codigo}')">×</button></span>`).join('') : '<span class="kind">Nenhuma senha emitida nesta tela.</span>'; }
+    async function loadPanel() { try { const {chamadas} = await api('/painel'); document.getElementById('calls').innerHTML = chamadas.length ? chamadas.map((c, i) => `<div class="call-row"><strong class="code-small">${c.codigo}</strong><span class="kind">${c.tipo}</span><span class="status">${i === 0 ? 'agora' : c.status}</span></div>`).join('') : '<div class="empty">Nenhuma senha chamada ainda.</div>'; } catch { document.getElementById('healthText').textContent = 'API indisponível'; } }
+    api('/healthz').then(loadPanel).catch(() => { document.querySelector('.dot').style.background='#d9534f'; document.getElementById('healthText').textContent='API indisponível'; });
+  </script>
+</body>
+</html>
