@@ -2,9 +2,9 @@
 
 # ALUNO
 
-Nome: Beatriz Lemes
+Nome: Beatriz Lemes Vasconcelos de Souza
 
-RA: >>> PREENCHER <<<
+RA: 23113429-2
 
 Conta GitHub: @bialemesvsouza
 
